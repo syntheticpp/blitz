@@ -222,7 +222,7 @@ inline void BenchmarkExt<P_parameter>::stop()
     timer_.stop();
     BZPRECONDITION(state_ == running);
     state_ = benchmarkingImplementation;
-    
+
     times_(int(implementationNumber_), int(parameterNumber_)) = timer_.elapsed();
     instr_(int(implementationNumber_), int(parameterNumber_)) = timer_.instr();
     flops_(int(implementationNumber_), int(parameterNumber_)) = timer_.flops();
@@ -237,24 +237,28 @@ inline void BenchmarkExt<P_parameter>::startOverhead()
     BZPRECONDITION(parameterNumber_ > 0);
     BZPRECONDITION(parameterNumber_ <= numParameters_);
     state_ = runningOverhead;
-    overheadTimer_.start();
+    timer_.start();
 }
 
 template<typename P_parameter>
 inline void BenchmarkExt<P_parameter>::stopOverhead()
 {
     BZPRECONDITION(state_ == runningOverhead);
-    overheadTimer_.stop();
+    timer_.stop();
+
+    cout << "\ttimer overhead: " <<
+      1.0*timer_.elapsed()/times_(int(implementationNumber_), int(parameterNumber_-1)) << endl;
+
     times_(int(implementationNumber_), int(parameterNumber_-1)) -= 
-      overheadTimer_.elapsed();
+      timer_.elapsed();
     instr_(int(implementationNumber_), int(parameterNumber_-1)) -= 
-      overheadTimer_.instr();
+      timer_.instr();
     flops_(int(implementationNumber_), int(parameterNumber_-1)) -= 
-      overheadTimer_.flops();
+      timer_.flops();
 
     if(times_(int(implementationNumber_), int(parameterNumber_-1))<0) {
-      cerr << "Error: Timer underflow in benchmark " << implementationDescriptions_[implementationNumber_] << " " << parameters_(parameterNumber_) << endl;
-      times_(int(implementationNumber_), int(parameterNumber_-1)) = 0;
+      cerr << "\tError: Timer underflow in benchmark " << implementationDescriptions_[implementationNumber_] << " " << parameters_(parameterNumber_-1) << endl;
+      times_(int(implementationNumber_), int(parameterNumber_-1)) = blitz::huge(times_(0,0));
     }
     state_ = benchmarkingImplementation;
 }
@@ -296,7 +300,7 @@ double BenchmarkExt<P_parameter>::getMflops(unsigned implementation,
     BZPRECONDITION(state_ == done);
     BZPRECONDITION(implementation < numImplementations_);
     BZPRECONDITION(parameterNum < numParameters_);
-    return iterations_(parameterNum) * flopsPerIteration_(parameterNum)
+    return 1.0*iterations_(parameterNum) * flopsPerIteration_(parameterNum)
       / times_(int(implementation), int(parameterNum)) * timerconversion_;
 }
 
@@ -307,7 +311,7 @@ double BenchmarkExt<P_parameter>::getinstrperc(int implementation,
     BZPRECONDITION(state_ == done);
     BZPRECONDITION(implementation < numImplementations_);
     BZPRECONDITION(parameterNum < numParameters_);
-    return instr_(implementation,parameterNum)/
+    return 1.0*instr_(implementation,parameterNum)/
       times_(int(implementation), int(parameterNum));
 }
 template<typename P_parameter>
@@ -317,7 +321,7 @@ double BenchmarkExt<P_parameter>::getflopsperc(int implementation,
     BZPRECONDITION(state_ == done);
     BZPRECONDITION(implementation < numImplementations_);
     BZPRECONDITION(parameterNum < numParameters_);
-    return flops_(implementation,parameterNum)/
+    return 1.0*flops_(implementation,parameterNum)/
       times_(int(implementation), int(parameterNum));
 }
 
@@ -397,12 +401,15 @@ void BenchmarkExt<P_parameter>::savePylabGraph(const char* filename, const char*
 
     ofs.setf(ios::scientific);
 
-    // This will be a lot simpler once Matlab-style output formatting
-    // of vectors & matrices is finished.
+    ofs << "legnames=[";
+    for (unsigned j=0; j < numImplementations_; ++j)
+    {
+        ofs << "'" << implementationDescriptions_[j] << "'";
+        if (j != numImplementations_ - 1)
+            ofs << ", ";
+    } 
 
-    // ofs << "parm = " << parameters_ << ";" << endl << endl;
-
-    ofs << "parm = array([ ";
+    ofs << "]\n\nparm = array([ ";
     unsigned i;
     for (i=0; i < numParameters_; ++i)
       ofs << setprecision(12) << double(parameters_(i)) << ", ";
@@ -450,17 +457,9 @@ void BenchmarkExt<P_parameter>::savePylabGraph(const char* filename, const char*
 
     ofs << graphType << "(parm,Mf)\ntitle('" << description_ << "')\n"
         << "xlabel('" << parameterDescription_ << "')\n"
-        << "ylabel('" << rateDescription_ << "')\n"
-        << "legnames=[";
-    
-    for (unsigned j=0; j < numImplementations_; ++j)
-    {
-        ofs << "'" << implementationDescriptions_[j] << "'";
-        if (j != numImplementations_ - 1)
-            ofs << ", ";
-    } 
+        << "ylabel('" << rateDescription_ << "')\n";
 
-    ofs << "]\nlegend(legnames)\n";
+    ofs << "legend(legnames)\n";
 }
 
 BZ_NAMESPACE_END
