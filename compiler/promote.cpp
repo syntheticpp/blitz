@@ -1,4 +1,4 @@
-#ifndef HAVE_TYPENAME
+#ifdef BZ_NO_TYPENAME
  #define typename
 #endif
 
