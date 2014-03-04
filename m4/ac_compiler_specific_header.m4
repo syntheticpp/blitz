@@ -10,6 +10,8 @@ See also file blitz/bzconfig.h
 AC_MSG_CHECKING(compiler specific header)
 
 case "$CXX" in
+  *cl*)         AX_PREFIX_CONFIG_H([blitz/ms/bzconfig.h],[BZ])
+                COMPILER_SPECIFIC_HEADER="ms/bzconfig.h" ;;
   *xlc++*)      AX_PREFIX_CONFIG_H([blitz/apple/bzconfig.h],[BZ])
                 COMPILER_SPECIFIC_HEADER="apple/bzconfig.h" ;;
   *icpc*|*icc*) AX_PREFIX_CONFIG_H([blitz/intel/bzconfig.h],[BZ])
