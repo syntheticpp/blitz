@@ -27,7 +27,7 @@ lgamma_r(x,&i);
 #else
 lgamma(x); 
 #endif
-hypot(x,y); nextafter(x,y); remainder(x,y); scalb(x,y);
+hypot(x,y); nextafter(x,y); remainder(x,y);
 return 0;],
  ac_cv_cxx_have_ieee_math=yes, ac_cv_cxx_have_ieee_math=no)
  LIBS="$ac_save_LIBS"
